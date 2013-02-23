@@ -646,13 +646,16 @@ def _prefix_commands(command, which):
     return prefix + command
 
 
-def _prefix_env_vars(command):
+def _prefix_env_vars(command, local=False):
     """
     Prefixes ``command`` with any shell environment vars, e.g. ``PATH=foo ``.
 
     Currently, this only applies the PATH updating implemented in
     `~fabric.context_managers.path` and environment variables from
     `~fabric.context_managers.shell_env`.
+
+    Will switch to using Windows style 'SET' commands when invoked by
+    ``local()`` and on a Windows localhost.
     """
     env_vars = {}
 
@@ -672,11 +675,17 @@ def _prefix_env_vars(command):
     env_vars.update(env.shell_env)
 
     if env_vars:
+        set_cmd, exp_cmd = '', ''
+        if win32 and local:
+            set_cmd = 'SET '
+        else:
+            exp_cmd = 'export '
+
         exports = ' '.join(
-            '%s="%s"' % (k, v if k == 'PATH' else _shell_escape(v))
+            '%s%s="%s"' % (set_cmd, k, v if k == 'PATH' else _shell_escape(v))
             for k, v in env_vars.iteritems()
         )
-        shell_env_str = 'export %s && ' % exports
+        shell_env_str = '%s%s && ' % (exp_cmd, exports)
     else:
         shell_env_str = ''
 
@@ -709,6 +718,9 @@ def _execute(channel, command, pty=True, combine_stderr=None,
 
     # Timeout setting control
     timeout = env.command_timeout if (timeout is None) else timeout
+
+    # What to do with CTRl-C?
+    remote_interrupt = env.remote_interrupt
 
     with char_buffered(sys.stdin):
         # Combine stdout and stderr to get around oddball mixing issues
@@ -755,6 +767,11 @@ def _execute(channel, command, pty=True, combine_stderr=None,
             ThreadHandler('in', input_loop, channel, using_pty)
         )
 
+        if remote_interrupt is None:
+            remote_interrupt = invoke_shell
+        if remote_interrupt and not using_pty:
+            remote_interrupt = False
+
         while True:
             if channel.exit_status_ready():
                 break
@@ -764,7 +781,12 @@ def _execute(channel, command, pty=True, combine_stderr=None,
                 # exception within, recv_exit_status())
                 for worker in workers:
                     worker.raise_if_needed()
-            time.sleep(ssh.io_sleep)
+            try:
+                time.sleep(ssh.io_sleep)
+            except KeyboardInterrupt:
+                if not remote_interrupt:
+                    raise
+                channel.send('\x03')
 
         # Obtain exit code of remote program now that we're done.
         status = channel.recv_exit_status()
@@ -1093,7 +1115,8 @@ def local(command, capture=False, shell=None):
     """
     given_command = command
     # Apply cd(), path() etc
-    wrapped_command = _prefix_commands(_prefix_env_vars(command), 'local')
+    with_env = _prefix_env_vars(command, local=True)
+    wrapped_command = _prefix_commands(with_env, 'local')
     if output.debug:
         print("[localhost] local: %s" % (wrapped_command))
     elif output.running:
@@ -1165,7 +1188,7 @@ def reboot(wait=120):
     # Shorter timeout for a more granular cycle than the default.
     timeout = 5
     # Use 'wait' as max total wait time
-    attempts = int(round(wait / float(timeout)))
+    attempts = int(round(float(wait) / float(timeout)))
     # Don't bleed settings, since this is supposed to be self-contained.
     # User adaptations will probably want to drop the "with settings()" and
     # just have globally set timeout/attempts values.

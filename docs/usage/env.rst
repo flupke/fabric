@@ -35,7 +35,7 @@ The `~fabric.context_managers.settings` context manager
 
 In many situations, it's useful to only temporarily modify ``env`` vars so that
 a given settings change only applies to a block of code. Fabric provides a
-`~fabric.context_managers.settings` context manager, which takes any numbr of
+`~fabric.context_managers.settings` context manager, which takes any number of
 key/value pairs and will use them to modify ``env`` within its wrapped block.
 
 For example, there are many situations where setting ``warn_only`` (see below)
@@ -523,6 +523,27 @@ far. For informational purposes only.
 
 .. seealso:: :doc:`fab`
 
+
+.. _remote-interrupt:
+
+``remote_interrupt``
+--------------------
+
+**Default:** ``None``
+
+Controls whether Ctrl-C triggers an interrupt remotely or is captured locally,
+as follows:
+
+* ``None`` (the default): only `~fabric.operations.open_shell` will exhibit
+  remote interrupt behavior, and
+  `~fabric.operations.run`/`~fabric.operations.sudo` will capture interrupts
+  locally.
+* ``False``: even `~fabric.operations.open_shell` captures locally.
+* ``True``: all functions will send the interrupt to the remote end.
+
+.. versionadded:: 1.6
+
+
 .. _rcfile:
 
 ``rcfile``
@@ -543,6 +564,18 @@ Path used when loading Fabric's local settings file.
 
 If ``True``, the SSH layer will raise an exception when connecting to hosts not
 listed in the user's known-hosts file.
+
+.. seealso:: :doc:`ssh`
+
+.. _system-known-hosts:
+
+``system_known_hosts``
+------------------------
+
+**Default:** ``None``
+
+If set, should be the path to a known_hosts file.  The SSH layer will
+read this file before reading the user's known-hosts file.
 
 .. seealso:: :doc:`ssh`
 

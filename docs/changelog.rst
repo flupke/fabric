@@ -25,6 +25,34 @@ would have also been included in the 1.2 line.
 Changelog
 =========
 
+* :feature:`821` Add `~fabric.context_managers.remote_tunnel` to allow reverse
+  SSH tunneling (exposing locally-visible network ports to the remote end).
+  Thanks to Giovanni Bajo for the patch.
+* :feature:`823` Add :ref:`env.remote_interrupt <remote-interrupt>` which
+  controls whether Ctrl-C is forwarded to the remote end or is captured locally
+  (previously, only the latter behavior was implemented). Thanks to Geert
+  Jansen for the patch.
+* :release:`1.5.3 <2013-01-28>`
+* :bug:`806` Force strings given to ``getpass`` during password prompts to be
+  ASCII, to prevent issues on some platforms when Unicode is encountered.
+  Thanks to Alex Louden for the patch.
+* :bug:`805` Update `~fabric.context_managers.shell_env` to play nice with
+  Windows (7, at least) systems and `~fabric.operations.local`. Thanks to
+  Fernando Macedo for the patch.
+* :bug:`654` Parallel runs whose sum total of returned data was large (e.g.
+  large return values from the task, or simply a large number of hosts in the
+  host list) were causing frustrating hangs. This has been fixed.
+* :feature:`402` Attempt to detect stale SSH sessions and reconnect when they
+  arise. Thanks to `@webengineer` for the patch.
+* :bug:`791` Cast `~fabric.operations.reboot`'s ``wait`` parameter to a numeric
+  type in case the caller submitted a string by mistake. Thanks to Thomas
+  Schreiber for the patch.
+* :bug:`703` Add a ``shell`` kwarg to many methods in `~fabric.contrib.files`
+  to help avoid conflicts with `~fabric.context_managers.cd` and similar.
+  Thanks to `@mikek` for the patch.
+* :feature:`730` Add :ref:`env.system_known_hosts/--system-known-hosts
+  <system-known-hosts>` to allow loading a user-specified system-level SSH
+  ``known_hosts`` file. Thanks to Roy Smith for the patch.
 * :release:`1.5.2 <2013-01-15>`
 * :feature:`818` Added :ref:`env.eagerly_disconnect <eagerly-disconnect>`
   option to help prevent pile-up of many open connections.
