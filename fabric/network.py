@@ -13,7 +13,7 @@ import socket
 import sys
 
 from fabric.auth import get_password, set_password
-from fabric.utils import abort, handle_prompt_abort
+from fabric.utils import abort, handle_prompt_abort, warn
 from fabric.exceptions import NetworkError
 
 try:
@@ -136,8 +136,9 @@ def ssh_config(host_string=None):
     May give an explicit host string as ``host_string``.
     """
     from fabric.state import env
+    dummy = {}
     if not env.use_ssh_config:
-        return {}
+        return dummy
     if '_ssh_config' not in env:
         try:
             conf = ssh.SSHConfig()
@@ -146,7 +147,8 @@ def ssh_config(host_string=None):
                 conf.parse(fd)
                 env._ssh_config = conf
         except IOError:
-            abort("Unable to load SSH config file '%s'" % path)
+            warn("Unable to load SSH config file '%s'" % path)
+            return dummy
     host = parse_host_string(host_string or env.host_string)['host']
     return env._ssh_config.lookup(host)
 
@@ -167,10 +169,10 @@ def key_filenames():
     # Strip out any empty strings (such as the default value...meh)
     keys = filter(bool, keys)
     # Honor SSH config
-    # TODO: fix ssh so it correctly treats IdentityFile as a list
     conf = ssh_config()
     if 'identityfile' in conf:
-        keys.append(conf['identityfile'])
+        # Assume a list here as we require Paramiko 1.10+
+        keys.extend(conf['identityfile'])
     return map(os.path.expanduser, keys)
 
 

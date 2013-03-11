@@ -25,6 +25,23 @@ would have also been included in the 1.2 line.
 Changelog
 =========
 
+* :release:`1.6.0 <2013-03-01>`
+* :release:`1.5.4 <2013-03-01>`
+* :bug:`844` Account for SSH config overhaul in Paramiko 1.10 by e.g. updating
+  treatment of ``IdentityFile`` to handle multiple values. **This and related
+  SSH config parsing changes are backwards incompatible**; we are including
+  them in this release because they do fix incorrect, off-spec behavior.
+* :bug:`843` Ensure string ``pool_size`` values get run through ``int()``
+  before deriving final result (stdlib ``min()`` has odd behavior here...).
+  Thanks to Chris Kastorff for the catch.
+* :bug:`839` Fix bug in `~fabric.contrib.project.rsync_project` where IPv6
+  address were not always correctly detected. Thanks to Antonio Barrero for
+  catch & patch.
+* :bug:`587` Warn instead of aborting when :ref:`env.use_ssh_config
+  <use-ssh-config>` is True but the configured SSH conf file doesn't exist.
+  This allows multi-user fabfiles to enable SSH config without causing hard
+  stops for users lacking SSH configs. Thanks to Rodrigo Pimentel for the
+  report.
 * :feature:`821` Add `~fabric.context_managers.remote_tunnel` to allow reverse
   SSH tunneling (exposing locally-visible network ports to the remote end).
   Thanks to Giovanni Bajo for the patch.
